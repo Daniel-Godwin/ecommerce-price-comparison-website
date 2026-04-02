@@ -1,1 +1,1 @@
-# ecommerce-price-comparison-platform
+# ecommerce-price-comparison-website
