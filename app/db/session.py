@@ -21,7 +21,7 @@ def _make_engine():
         url = url.replace("postgres://", "postgresql+psycopg://", 1)
     elif url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-    
+
     if url.startswith("sqlite"):
         # timeout: wait for locks instead of failing; WAL: allow a reader
         # and a writer concurrently (llm_calls logging happens on a second
