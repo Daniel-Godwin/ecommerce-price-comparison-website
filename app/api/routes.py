@@ -117,3 +117,32 @@ def llm_costs(db: Session = Depends(get_db)) -> CostReport:
         calls_last_24h=sum(int(r[1]) for r in rows),
         by_purpose={r[0]: int(r[1]) for r in rows},
     )
+
+
+@router.get("/products/recent/list")
+def recent_products(limit: int = Query(default=12, ge=1, le=50),
+                    db: Session = Depends(get_db)) -> list[dict]:
+    """Most recently tracked products with their latest price (ticker feed)."""
+    from sqlalchemy import select
+
+    from app.db.models import Product
+
+    rows = db.execute(
+        select(Product).order_by(Product.id.desc()).limit(limit)
+    ).scalars().all()
+    out = []
+    for product in rows:
+        detail = repo.get_product_detail(db, product.id)
+        listings = [x for x in (detail or {}).get("listings", [])
+                    if x.get("latest_price")]
+        if not listings:
+            continue
+        cheapest = min(listings, key=lambda x: x["latest_price"])
+        out.append({
+            "product_id": product.id,
+            "title": cheapest["title"][:60],
+            "price": cheapest["latest_price"],
+            "currency": cheapest["currency"],
+            "retailer": cheapest["retailer"],
+        })
+    return out

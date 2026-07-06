@@ -1,0 +1,10 @@
+[theme]
+base = "dark"
+primaryColor = "#22D3EE"          # electric cyan
+backgroundColor = "#0F1B2D"       # midnight navy
+secondaryBackgroundColor = "#16263D"
+textColor = "#E8EEF6"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false

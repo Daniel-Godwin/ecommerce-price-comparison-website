@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kasuwa — Intelligent Price Comparison</title>
+  <meta name="description" content="Compare product prices across Nigerian retailers. Ask in plain language, get answers grounded in real listings." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛒</text></svg>" />
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wordmark">Kasuwa<span class="tld">.ng</span></div>
+  <nav class="head-nav">
+    <a href="#ask">Ask AI</a>
+    <a href="/docs" target="_blank" rel="noopener">API</a>
+    <a href="https://github.com/Daniel-Godwin/ecommerce-price-comparison-website" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <!-- ═══════════ hero: the search IS the product ═══════════ -->
+  <section class="hero">
+    <p class="eyebrow">Every market stall. One search.</p>
+    <h1>Find the best price<br /><em>before</em> you leave the house.</h1>
+    <form id="search-form" class="search-bar" autocomplete="off">
+      <input id="search-input" type="text" required minlength="2" maxlength="200"
+             placeholder="Samsung Galaxy A15, rice cooker, HP laptop…" />
+      <button type="submit" id="search-btn">Compare prices</button>
+    </form>
+    <div class="retailer-row" id="retailer-row" aria-label="Retailers searched"></div>
+  </section>
+
+  <!-- ═══════════ signature: live market ticker ═══════════ -->
+  <div class="ticker-wrap" id="ticker-wrap" hidden>
+    <div class="ticker" id="ticker"></div>
+  </div>
+
+  <!-- ═══════════ results ═══════════ -->
+  <section class="results" id="results" hidden>
+    <div class="stats-row" id="stats-row"></div>
+    <div class="source-row" id="source-row"></div>
+    <h2 class="section-title">Best deals</h2>
+    <div class="deal-grid" id="deal-grid"></div>
+    <details class="all-listings" id="all-wrap" hidden>
+      <summary>All listings</summary>
+      <div class="table-scroll"><table id="all-table"></table></div>
+    </details>
+  </section>
+
+  <section class="empty-note" id="empty-note" hidden>
+    <p>No listings found for that search. Live retailers sometimes block automated
+    traffic from cloud servers — the same search from a Nigerian connection
+    usually succeeds. Try a different product, or ask the AI below.</p>
+  </section>
+
+  <!-- ═══════════ Ask AI ═══════════ -->
+  <section class="ask" id="ask">
+    <h2 class="section-title">Ask in plain language</h2>
+    <p class="ask-sub">Answers are grounded in retrieved listings with citations
+      — if the data isn't there, it says so instead of guessing.</p>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <form id="ask-form" class="ask-bar" autocomplete="off">
+      <input id="ask-input" type="text" required minlength="5" maxlength="500"
+             placeholder="best phone under ₦150,000?" />
+      <button type="submit" id="ask-btn">Ask</button>
+    </form>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <span>Kasuwa · an intelligent price comparison platform</span>
+  <span class="foot-note">Prices come from live retailer data — the AI narrates, it never invents.</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

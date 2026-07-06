@@ -103,6 +103,14 @@ tests/                   # 25 unit/adapter/integration tests + fixtures
 
 Full specification: see the *Software Design & Development Documentation* (v1.0) in the project docs.
 
+## Public website (frontend-web/)
+
+`frontend-web/` is a standalone React (Vite) website — "Kasuwa" — that consumes the API: hero search with a live price ticker, ranked deal cards with retailer images, per-source health, and a grounded Ask-AI chat with citations. Develop with `npm run dev` (expects the API on :8000); deploys on Render as a free static site via the blueprint (set `VITE_API_BASE` to your API URL in the dashboard).
+
+### Real data in production
+
+Cloud datacenter IPs are often blocked by retailers, while residential networks are not. `scripts/seed_production.py` runs the live search pipeline **on your machine** while writing to the **production** database (set `DATABASE_URL` to Render's External Database URL). The API rebuilds its vector index from the DB automatically on startup, so seeded products become retrievable after the next deploy/restart — the deployed site then serves real listings with real retailer URLs.
+
 ## Quality gates
 
 - `pytest -q` — 46 unit/adapter/integration tests

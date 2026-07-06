@@ -1,0 +1,215 @@
+/* Kasuwa — design tokens
+   Harbour navy base · amber price tags (mono) · cyan interaction
+   Display: Sora · Body: IBM Plex Sans · Prices/data: IBM Plex Mono   */
+
+:root {
+  --harbour: #0B1526;
+  --deepwater: #121F38;
+  --panel: #17264424;
+  --line: #24385C;
+  --chalk: #E9F0F8;
+  --mist: #93A5C0;
+  --signal: #37D2E5;       /* interactive */
+  --naira: #FFB84D;        /* prices */
+  --mint: #58D6A3;         /* good news */
+  --warn: #FF8A7A;
+  --radius: 14px;
+  --font-display: "Sora", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-data: "IBM Plex Mono", monospace;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background:
+    radial-gradient(1200px 500px at 70% -10%, #16305a55, transparent 60%),
+    var(--harbour);
+  color: var(--chalk);
+  font-family: var(--font-body);
+  line-height: 1.55;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main { flex: 1; width: min(1080px, 92vw); margin: 0 auto; }
+
+/* ── header ─────────────────────────────── */
+.site-head {
+  width: min(1080px, 92vw); margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 0 6px;
+}
+.wordmark {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+.wordmark .tld { color: var(--signal); font-weight: 600; }
+.head-nav a {
+  color: var(--mist); text-decoration: none; margin-left: 22px;
+  font-size: 0.92rem;
+}
+.head-nav a:hover, .head-nav a:focus-visible { color: var(--signal); }
+
+/* ── hero ─────────────────────────────── */
+.hero { padding: 64px 0 30px; text-align: center; }
+.eyebrow {
+  color: var(--signal); font-family: var(--font-data); font-size: 0.85rem;
+  letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 14px;
+}
+.hero h1 {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(1.9rem, 5vw, 3.3rem); line-height: 1.12;
+  letter-spacing: -0.03em; margin-bottom: 30px;
+}
+.hero h1 em { color: var(--naira); font-style: normal; }
+
+.search-bar {
+  display: flex; gap: 10px; max-width: 640px; margin: 0 auto;
+}
+.search-bar input, .ask-bar input {
+  flex: 1; padding: 15px 18px; font-size: 1rem; color: var(--chalk);
+  background: var(--deepwater); border: 1px solid var(--line);
+  border-radius: var(--radius); font-family: var(--font-body);
+}
+.search-bar input:focus, .ask-bar input:focus {
+  outline: 2px solid var(--signal); outline-offset: 1px; border-color: transparent;
+}
+.search-bar button, .ask-bar button {
+  padding: 15px 26px; font-size: 1rem; font-weight: 600; cursor: pointer;
+  font-family: var(--font-display);
+  color: #06222b; background: var(--signal);
+  border: none; border-radius: var(--radius);
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+.search-bar button:hover, .ask-bar button:hover { filter: brightness(1.1); }
+.search-bar button:active, .ask-bar button:active { transform: scale(0.98); }
+button:disabled { opacity: 0.55; cursor: wait; }
+
+.retailer-row {
+  margin-top: 16px; display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap;
+}
+.retailer-chip {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.85rem; color: var(--mist);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px;
+  cursor: pointer; user-select: none; background: transparent;
+}
+.retailer-chip input { accent-color: var(--signal); }
+.retailer-chip:has(input:checked) { color: var(--chalk); border-color: var(--signal); }
+
+/* ── ticker (signature) ─────────────────── */
+.ticker-wrap {
+  border-block: 1px solid var(--line);
+  overflow: hidden; white-space: nowrap;
+  padding: 10px 0; margin: 26px 0 6px;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.ticker { display: inline-block; animation: glide 45s linear infinite; }
+.ticker-wrap:hover .ticker { animation-play-state: paused; }
+.tick {
+  font-family: var(--font-data); font-size: 0.86rem; color: var(--mist);
+  margin-right: 42px;
+}
+.tick .p { color: var(--naira); font-weight: 600; }
+@keyframes glide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .ticker { animation: none; } }
+
+/* ── results ─────────────────────────────── */
+.results { padding: 26px 0 8px; }
+.section-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 1.35rem; letter-spacing: -0.01em; margin: 26px 0 16px;
+}
+.stats-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.stat {
+  flex: 1; min-width: 140px; background: var(--deepwater);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px;
+}
+.stat .label { color: var(--mist); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.stat .value { font-family: var(--font-data); font-size: 1.25rem; font-weight: 600; color: var(--naira); }
+.stat .value.plain { color: var(--chalk); }
+
+.source-row { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.source {
+  font-family: var(--font-data); font-size: 0.78rem;
+  border-radius: 999px; padding: 5px 12px; border: 1px solid var(--line);
+  color: var(--mist);
+}
+.source.ok { color: var(--mint); border-color: #2c5b4a; }
+.source.fail { color: var(--warn); border-color: #5b3a34; }
+
+.deal-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+.deal {
+  background: var(--deepwater); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px; display: flex;
+  flex-direction: column; gap: 8px;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+.deal:hover { border-color: var(--signal); transform: translateY(-2px); }
+.deal.best { border-color: var(--naira); }
+.deal .badge {
+  align-self: flex-start; font-family: var(--font-data); font-size: 0.72rem;
+  color: #3a2a08; background: var(--naira); border-radius: 6px; padding: 2px 8px;
+  font-weight: 600;
+}
+.deal img {
+  width: 100%; height: 150px; object-fit: contain;
+  background: #0d1830; border-radius: 8px;
+}
+.deal .name { font-size: 0.92rem; min-height: 2.7em; }
+.deal .price { font-family: var(--font-data); font-size: 1.2rem; font-weight: 600; color: var(--naira); }
+.deal .shop { color: var(--mist); font-size: 0.8rem; }
+.deal a.go {
+  margin-top: auto; text-align: center; text-decoration: none;
+  color: var(--signal); border: 1px solid var(--line); border-radius: 9px;
+  padding: 8px; font-size: 0.88rem;
+}
+.deal a.go:hover { border-color: var(--signal); }
+
+.all-listings { margin-top: 22px; color: var(--mist); }
+.all-listings summary { cursor: pointer; font-family: var(--font-display); }
+.table-scroll { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { color: var(--mist); font-weight: 500; }
+td.num { font-family: var(--font-data); color: var(--naira); }
+td a { color: var(--signal); }
+
+.empty-note {
+  margin: 30px auto; max-width: 620px; color: var(--mist);
+  border: 1px dashed var(--line); border-radius: var(--radius); padding: 18px 22px;
+}
+
+/* ── ask ─────────────────────────────── */
+.ask { padding: 40px 0 60px; }
+.ask-sub { color: var(--mist); margin-bottom: 18px; max-width: 560px; }
+.chat { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+.msg { max-width: 78ch; padding: 13px 16px; border-radius: var(--radius); }
+.msg.user { align-self: flex-end; background: #1d3a5c; }
+.msg.ai { align-self: flex-start; background: var(--deepwater); border: 1px solid var(--line); }
+.msg.ai.thinking { color: var(--mist); font-family: var(--font-data); font-size: 0.9rem; }
+.msg.ai .cites { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.msg.ai .cites a { color: var(--signal); text-decoration: none; }
+.msg.ai .cites div { font-size: 0.85rem; margin-top: 4px; }
+.msg.ai .cites .p { font-family: var(--font-data); color: var(--naira); }
+.msg h1, .msg h2, .msg h3 { font-size: 1.02rem; margin: 8px 0 4px; font-family: var(--font-display); }
+.msg table { margin: 8px 0; }
+.ask-bar { display: flex; gap: 10px; max-width: 640px; }
+
+/* ── footer ─────────────────────────────── */
+.site-foot {
+  border-top: 1px solid var(--line);
+  width: 100%; padding: 18px 4vw; display: flex; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; color: var(--mist); font-size: 0.85rem;
+}
+
+@media (max-width: 560px) {
+  .search-bar, .ask-bar { flex-direction: column; }
+  .site-head { flex-direction: column; gap: 8px; }
+}

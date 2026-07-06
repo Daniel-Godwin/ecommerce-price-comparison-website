@@ -20,3 +20,15 @@ services:
 databases:
   - name: pricecompare-db
     plan: free
+
+  # Public website (static React build). Set VITE_API_BASE in the dashboard
+  # to your API URL, e.g. https://price-comparison-api-xxxx.onrender.com
+  - type: web
+    name: kasuwa-web
+    runtime: static
+    rootDir: frontend-web
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE
+        sync: false

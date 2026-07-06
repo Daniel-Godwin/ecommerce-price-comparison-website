@@ -8,11 +8,13 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from contextlib import asynccontextmanager
+from pathlib import Path
 from time import monotonic
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
 from app.config import get_settings
@@ -25,7 +27,38 @@ logging.basicConfig(level=logging.INFO,
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
+    _sync_vector_index()
     yield
+
+
+def _sync_vector_index() -> None:
+    """Rebuild the FAISS index from the database when it lags behind —
+    e.g. after data was seeded directly into production Postgres, or the
+    host's ephemeral disk wiped the index on restart."""
+    try:
+        from sqlalchemy import func, select
+
+        from app.db.models import Product
+        from app.db.session import db_session
+        from app.vector.faiss_store import get_store
+
+        store = get_store()
+        with db_session() as db:
+            total = db.scalar(select(func.count(Product.id))) or 0
+            if store.count >= total or total == 0:
+                return
+            logging.getLogger(__name__).info(
+                "vector index behind DB (%s < %s): rebuilding", store.count, total
+            )
+            for offset in range(0, total, 500):
+                batch = db.execute(
+                    select(Product.id, Product.canonical_title)
+                    .order_by(Product.id).offset(offset).limit(500)
+                ).all()
+                store.upsert([r[0] for r in batch], [r[1] for r in batch])
+            store.save()
+    except Exception as exc:  # noqa: BLE001 — startup must not die on this
+        logging.getLogger(__name__).warning("index sync skipped: %s", exc)
 
 
 app = FastAPI(
@@ -38,7 +71,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-@app.get("/", include_in_schema=False)
+@app.get("/api", include_in_schema=False)
 def root():
     return {
         "service": "Intelligent E-Commerce Price Comparison API",
@@ -75,3 +108,9 @@ async def rate_limit(request: Request, call_next):
 
 
 app.include_router(router)
+
+
+# ---- public website (served at the root URL) --------------------------------
+_WEB_DIR = Path(__file__).resolve().parents[1] / "frontend" / "web"
+if _WEB_DIR.exists():
+    app.mount("/", StaticFiles(directory=_WEB_DIR, html=True), name="web")
