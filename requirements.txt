@@ -12,7 +12,7 @@ uvicorn[standard]>=0.30
 
 # Persistence (Phase 2)
 sqlalchemy>=2.0
-# psycopg[binary]>=3.1        # uncomment for PostgreSQL; SQLite needs nothing
+psycopg[binary]>=3.1          # PostgreSQL driver (SQLite used when DATABASE_URL unset)
 
 # Vector search (Phase 2)
 faiss-cpu>=1.8
