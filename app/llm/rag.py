@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 _PROMPT = (Path(__file__).parent / "prompts" / "ask.txt").read_text()
 _CITE_RE = re.compile(r"\[(\d+)\]")
 MAX_CONTEXT_LISTINGS = 8
+# hits below this cosine similarity are noise, not matches — FAISS always
+# returns the NEAREST neighbors even when nothing is actually near
+# (calibrated: relevant queries score 0.45+, unrelated ones < 0.27)
+MIN_SIMILARITY = 0.35
 
 
 class Citation(BaseModel):
@@ -64,6 +68,7 @@ def _retrieve(db: Session, intent: Intent, live_topup: bool) -> list[Citation]:
 
     store = get_store()
     hits = store.search(intent.product_terms, k=24) if store.count else []
+    hits = [(pid, score) for pid, score in hits if score >= MIN_SIMILARITY]
 
     candidates: list[Citation] = []
     seen_urls: set[str] = set()

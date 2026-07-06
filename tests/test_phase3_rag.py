@@ -189,3 +189,16 @@ def test_intent_preserves_model_numbers(client):
     intent = parse_intent("best samsung galaxy a15 under ₦160,000?")
     assert "a15" in intent.product_terms
     assert intent.max_price == 160000.0
+
+
+def test_irrelevant_query_yields_no_citations(client):
+    """Regression (found by eval harness): FAISS nearest-neighbors are not
+    matches — retrieval must reject low-similarity hits (MIN_SIMILARITY)."""
+    _seed(client, "hp laptop")
+    resp = client.post(
+        "/api/v1/ask",
+        json={"question": "cheapest quantum flux capacitor?", "live_topup": False},
+    )
+    body = resp.json()
+    assert body["grounded"] is False
+    assert body["citations"] == []

@@ -103,6 +103,17 @@ tests/                   # 25 unit/adapter/integration tests + fixtures
 
 Full specification: see the *Software Design & Development Documentation* (v1.0) in the project docs.
 
+## Quality gates
+
+- `pytest -q` — 46 unit/adapter/integration tests
+- `python -m scripts.eval_rag` — golden-set RAG evaluation: citation validity, price fidelity, budget respect, honesty on nonsense queries (pass threshold ≥ 95%; runs in CI on every push)
+
+## Deployment
+
+**Docker (any host):** `docker compose up --build` → API :8000 + PostgreSQL + scheduler.
+
+**Render.com (free tier):** the included `render.yaml` is a one-click blueprint — New + → Blueprint → select this repo. It provisions the API (Docker) with a health check on `/api/v1/health` and a free PostgreSQL instance. Add `ANTHROPIC_API_KEY` in the dashboard to activate real LLM answers; without it the offline stub serves grounded answers at zero cost. Note: the free tier's disk is ephemeral, so the FAISS index rebuilds from the database on restart — fine at this scale.
+
 ## Ethics & compliance
 
 Official retailer APIs are preferred over scraping wherever available. Scraping adapters respect polite rate limits, cache aggressively, deep-link back to the original retailer page, and process only public product listings — no personal data.

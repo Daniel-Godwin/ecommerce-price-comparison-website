@@ -20,3 +20,5 @@ jobs:
         run: ruff check app tests
       - name: Tests (pytest)
         run: pytest -q
+      - name: RAG evaluation harness
+        run: python -m scripts.eval_rag
