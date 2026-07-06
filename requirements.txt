@@ -1,0 +1,15 @@
+# Core (Phase 1)
+requests>=2.32
+beautifulsoup4>=4.12
+tenacity>=8.2
+pydantic>=2.7
+pydantic-settings>=2.2
+
+# UI & analytics
+streamlit>=1.35
+pandas>=2.2
+plotly>=5.22
+
+# Dev / quality
+pytest>=8.2
+ruff>=0.4
