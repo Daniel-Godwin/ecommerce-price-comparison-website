@@ -23,6 +23,7 @@ from datetime import UTC, datetime, timedelta
 import requests
 from sqlalchemy import func, select
 
+import app.config  # noqa: F401 — ensures .env is loaded before os.getenv below
 from app.db.models import LLMCall
 from app.db.session import db_session
 

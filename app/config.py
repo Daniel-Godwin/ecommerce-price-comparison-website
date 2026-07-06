@@ -1,7 +1,13 @@
 """Environment-driven configuration (design doc, Appendix A)."""
 from functools import lru_cache
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load .env into os.environ once, at import time. Modules like app.llm.client
+# read os.getenv() directly (ANTHROPIC_API_KEY, LLM_DAILY_BUDGET_USD), and
+# pydantic-settings' env_file only feeds its own fields — not the process env.
+load_dotenv()
 
 
 class Settings(BaseSettings):

@@ -32,6 +32,22 @@ MAX_CONTEXT_LISTINGS = 8
 # returns the NEAREST neighbors even when nothing is actually near
 # (calibrated: relevant queries score 0.45+, unrelated ones < 0.27)
 MIN_SIMILARITY = 0.35
+_STOP = {"the", "and", "for", "with", "why", "value", "money", "best",
+         "good", "offers", "offer", "buy", "cheap", "cheapest", "price"}
+
+
+def _significant_tokens(terms: str) -> set[str]:
+    return {t for t in re.findall(r"[a-z0-9]+", terms.lower())
+            if len(t) > 2 and t not in _STOP}
+
+
+def _title_matches(title: str, tokens: set[str]) -> bool:
+    """Cheap lexical guard on top of embedding similarity: the title must
+    share at least one significant token with the product terms."""
+    if not tokens:
+        return True
+    title_l = title.lower()
+    return any(t in title_l for t in tokens)
 
 
 class Citation(BaseModel):
@@ -70,6 +86,7 @@ def _retrieve(db: Session, intent: Intent, live_topup: bool) -> list[Citation]:
     hits = store.search(intent.product_terms, k=24) if store.count else []
     hits = [(pid, score) for pid, score in hits if score >= MIN_SIMILARITY]
 
+    tokens = _significant_tokens(intent.product_terms)
     candidates: list[Citation] = []
     seen_urls: set[str] = set()
     for product_id, _score in hits:
@@ -79,6 +96,8 @@ def _retrieve(db: Session, intent: Intent, live_topup: bool) -> list[Citation]:
         for row in product.listings:
             snap = repo.latest_price(db, row.id)
             if snap is None or row.url in seen_urls:
+                continue
+            if not _title_matches(row.title_raw, tokens):
                 continue
             if intent.max_price is not None and snap.price > intent.max_price:
                 continue

@@ -202,3 +202,17 @@ def test_irrelevant_query_yields_no_citations(client):
     body = resp.json()
     assert body["grounded"] is False
     assert body["citations"] == []
+
+
+def test_retrieval_rejects_title_with_no_product_tokens(client):
+    """Regression (found in live user testing): junk listings that sneak
+    past embedding similarity must fail the lexical title guard."""
+    from app.llm.rag import _significant_tokens, _title_matches
+
+    tokens = _significant_tokens("samsung galaxy a15 offers value money and why")
+    assert tokens == {"samsung", "galaxy", "a15"}          # noise words dropped
+    assert _title_matches("Samsung Galaxy A15 128GB", tokens) is True
+    assert _title_matches(
+        "RUNSONE Men 3 Colors Pack Ice Silky Underwear Valentine Gift", tokens
+    ) is False
+    assert _title_matches("Stratford Acoustic Guitar 38 Inches", tokens) is False
