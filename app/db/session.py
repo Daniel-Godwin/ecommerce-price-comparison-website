@@ -15,6 +15,13 @@ _DEFAULT_URL = "sqlite:///./pricecompare.db"
 
 def _make_engine():
     url = os.getenv("DATABASE_URL", _DEFAULT_URL)
+    # Render/Heroku-style URLs (postgres:// or postgresql://) make SQLAlchemy
+    # look for the legacy psycopg2 driver; point it at psycopg v3 explicitly.
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    
     if url.startswith("sqlite"):
         # timeout: wait for locks instead of failing; WAL: allow a reader
         # and a writer concurrently (llm_calls logging happens on a second
