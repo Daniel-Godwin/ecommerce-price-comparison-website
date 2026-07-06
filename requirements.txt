@@ -1,9 +1,23 @@
-# Core (Phase 1)
+# Core
 requests>=2.32
 beautifulsoup4>=4.12
 tenacity>=8.2
 pydantic>=2.7
 pydantic-settings>=2.2
+
+# API (Phase 2)
+fastapi>=0.111
+uvicorn[standard]>=0.30
+
+# Persistence (Phase 2)
+sqlalchemy>=2.0
+# psycopg[binary]>=3.1        # uncomment for PostgreSQL; SQLite needs nothing
+
+# Vector search (Phase 2)
+faiss-cpu>=1.8
+numpy>=1.26
+# sentence-transformers>=3.0  # optional semantic embeddings (pulls torch);
+                              # hashing embedder is the dependency-free default
 
 # UI & analytics
 streamlit>=1.35
@@ -12,4 +26,5 @@ plotly>=5.22
 
 # Dev / quality
 pytest>=8.2
+httpx>=0.27
 ruff>=0.4

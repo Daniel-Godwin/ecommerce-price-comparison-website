@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     max_workers: int = 8                   # concurrent adapter fan-out
     circuit_breaker_failures: int = 3      # consecutive failures → degraded
     circuit_breaker_cooldown_seconds: int = 300
+    rate_limit_per_min: int = 30           # NFR-08
     user_agent: str = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "

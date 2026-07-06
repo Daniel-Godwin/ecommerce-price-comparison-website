@@ -1,0 +1,44 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://price:price@db:5432/pricecompare
+      VECTOR_INDEX_DIR: /data/vector_index
+      RATE_LIMIT_PER_MIN: 30
+    volumes:
+      - vector_data:/data/vector_index
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: price
+      POSTGRES_PASSWORD: price
+      POSTGRES_DB: pricecompare
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U price"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  scheduler:
+    build: .
+    command: python -m jobs.scheduler --interval 3600
+    environment:
+      DATABASE_URL: postgresql+psycopg://price:price@db:5432/pricecompare
+      VECTOR_INDEX_DIR: /data/vector_index
+    volumes:
+      - vector_data:/data/vector_index
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  vector_data:

@@ -2,8 +2,8 @@
 
 A price comparison platform that aggregates product prices across multiple online retailers, with an intelligence layer (LLM APIs + Retrieval-Augmented Generation) arriving in Phase 3 to power natural-language product search and grounded, cited comparisons.
 
-> **Status: Phase 1 — Robust Aggregation Core** ✅
-> Concurrent multi-retailer search · normalization · price analytics · caching · circuit breakers · Streamlit UI · tests + CI
+> **Status: Phase 2 — Platform Foundation** ✅
+> Everything from Phase 1, plus: FastAPI REST API · SQLite/PostgreSQL persistence · price-snapshot history · FAISS semantic index · background refresh scheduler · Docker Compose
 
 ## Why
 
@@ -16,7 +16,15 @@ git clone https://github.com/Daniel-Godwin/ecommerce-price-comparison-website.gi
 cd ecommerce-price-comparison-website
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+# Option A — REST API (Phase 2)
+uvicorn app.main:app --reload          # OpenAPI docs at http://localhost:8000/docs
+
+# Option B — Streamlit UI (Phase 1)
 streamlit run frontend/streamlit_app.py
+
+# Option C — full stack with PostgreSQL via Docker
+docker compose up --build              # API :8000, Postgres, scheduler
 ```
 
 Then search for any product. The **DemoStore** adapter returns realistic sample data with no network access, so the full pipeline (search → normalize → analytics → UI) is demonstrable even offline or when live retailers block automated traffic.
@@ -27,16 +35,35 @@ Run the tests:
 pytest -q
 ```
 
-## Architecture (Phase 1 slice)
+## Architecture (Phase 2)
 
 ```
-Streamlit UI  →  Orchestrator  →  [ Jumia | Konga | DemoStore ] adapters
-                     │                (concurrent, per-source retry
-                     │                 + circuit breaker)
-                     ├→ Normalizer (₦/$/€/₺ parsing, canonical schema)
-                     ├→ Analytics  (min / max / avg / best deal / top-3)
-                     └→ TTL cache  (30 min, Redis-shaped interface)
+Streamlit UI ─┐
+              ├→ FastAPI /api/v1: search · products · history · retailers · health
+curl/clients ─┘        │  (rate limiting · validation · CORS)
+                       ▼
+                 Search service
+                  ├→ Orchestrator → [ Jumia | Konga | DemoStore ] adapters
+                  │     (concurrent, retries, circuit breaker, TTL cache)
+                  ├→ Normalizer (₦/$/€/₺ parsing → canonical schema)
+                  ├→ Persistence: products · listings · price_snapshots · searches
+                  │     (SQLite dev / PostgreSQL prod, SQLAlchemy 2.0)
+                  └→ FAISS vector index (pluggable embedder) → semantic neighbors
+
+jobs/scheduler.py refreshes popular queries in the background.
 ```
+
+### API at a glance
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/v1/search` | Multi-retailer search: listings, analytics, persisted product ids, semantic neighbors |
+| `GET /api/v1/products/{id}` | Product detail with latest price per retailer |
+| `GET /api/v1/products/{id}/history?days=30` | Price snapshots over time |
+| `GET /api/v1/retailers` | Supported sources + degraded status |
+| `GET /api/v1/health` | DB + vector-index health |
+
+**Embeddings** are pluggable: a dependency-free hashing embedder is the default (keeps torch out of CI); install `sentence-transformers` and restart to upgrade to true semantic embeddings — the index rebuilds itself automatically.
 
 Key resilience properties (from the design doc):
 
@@ -63,7 +90,7 @@ tests/                   # 25 unit/adapter/integration tests + fixtures
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
 | **1** | Aggregation core: adapters, normalizer, analytics, cache, Streamlit UI, tests, CI | ✅ this release |
-| **2** | FastAPI REST API, PostgreSQL persistence + price history, Redis, embeddings + FAISS semantic index, Docker, deployment | 🔜 |
+| **2** | FastAPI REST API, DB persistence + price history, embeddings + FAISS semantic index, scheduler, Docker | ✅ this release |
 | **3** | LLM query understanding, `/ask` RAG endpoint with citations + groundedness checks, entity resolution, cost dashboard | 🔜 |
 
 Full specification: see the *Software Design & Development Documentation* (v1.0) in the project docs.
