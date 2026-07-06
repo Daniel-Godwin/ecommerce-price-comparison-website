@@ -216,3 +216,17 @@ def test_retrieval_rejects_title_with_no_product_tokens(client):
         "RUNSONE Men 3 Colors Pack Ice Silky Underwear Valentine Gift", tokens
     ) is False
     assert _title_matches("Stratford Acoustic Guitar 38 Inches", tokens) is False
+
+
+def test_accessory_filter_from_live_incident(client):
+    """Regression (live user testing #2): asking about a phone must not
+    return phone cases; asking about a case must still work."""
+    from app.llm.rag import _is_accessory, _wants_accessory
+
+    assert _is_accessory("Samsung Galaxy A15 4G/5G Anti Drop Transparent Back Case")
+    assert _is_accessory("Samsung Galaxy A15 Tempered Glass Screen Protector")
+    assert not _is_accessory("Samsung Galaxy A15 128GB + 6GB RAM Blue")
+
+    assert _wants_accessory("samsung galaxy a15", []) is False
+    assert _wants_accessory("samsung galaxy a15 case", []) is True
+    assert _wants_accessory("samsung galaxy a15", ["transparent case"]) is True

@@ -41,6 +41,24 @@ def _significant_tokens(terms: str) -> set[str]:
             if len(t) > 2 and t not in _STOP}
 
 
+# accessory noise that floods retailer search results for device queries
+_ACCESSORY_TERMS = (
+    "case", "cover", "pouch", "screen protector", "protector", "tempered",
+    "charger", "charging cable", "usb cable", "earpiece", "strap", "holder",
+    "skin", "sticker", "stylus", "screen guard", "flip wallet",
+)
+
+
+def _wants_accessory(intent_terms: str, attributes: list[str]) -> bool:
+    text = (intent_terms + " " + " ".join(attributes)).lower()
+    return any(term in text for term in _ACCESSORY_TERMS)
+
+
+def _is_accessory(title: str) -> bool:
+    title_l = title.lower()
+    return any(term in title_l for term in _ACCESSORY_TERMS)
+
+
 def _title_matches(title: str, tokens: set[str]) -> bool:
     """Cheap lexical guard on top of embedding similarity: the title must
     share at least one significant token with the product terms."""
@@ -87,6 +105,7 @@ def _retrieve(db: Session, intent: Intent, live_topup: bool) -> list[Citation]:
     hits = [(pid, score) for pid, score in hits if score >= MIN_SIMILARITY]
 
     tokens = _significant_tokens(intent.product_terms)
+    allow_accessories = _wants_accessory(intent.product_terms, intent.attributes)
     candidates: list[Citation] = []
     seen_urls: set[str] = set()
     for product_id, _score in hits:
@@ -99,6 +118,8 @@ def _retrieve(db: Session, intent: Intent, live_topup: bool) -> list[Citation]:
                 continue
             if not _title_matches(row.title_raw, tokens):
                 continue
+            if not allow_accessories and _is_accessory(row.title_raw):
+                continue    # user asked about the device, not its accessories
             if intent.max_price is not None and snap.price > intent.max_price:
                 continue
             if intent.currency and snap.currency != intent.currency:
