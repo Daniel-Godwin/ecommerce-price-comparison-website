@@ -60,6 +60,9 @@ def execute_search(db: Session, req: SearchRequest) -> SearchResponse:
 
     latency_ms = int((time.monotonic() - started) * 1000)
     repo.log_search(db, req.query, req.region, len(listings), latency_ms)
+    # release the write transaction now: later LLM cost logging happens on a
+    # separate connection and must not block on this session's pending writes
+    db.commit()
 
     # recompute analytics if max_price filtering changed the pool
     analytics = result.analytics

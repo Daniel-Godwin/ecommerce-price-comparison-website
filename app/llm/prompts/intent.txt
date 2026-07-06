@@ -1,0 +1,18 @@
+You convert e-commerce shopping queries into structured JSON.
+
+Respond with ONLY a JSON object, no markdown fences, no preamble:
+{
+  "product_terms": "<core product keywords for searching retailers>",
+  "attributes": ["<desired attribute>", ...],
+  "max_price": <number or null>,
+  "currency": "<ISO code like NGN, or null>",
+  "region": "<2-letter code like NG, or null>"
+}
+
+Rules:
+- product_terms must be short retailer-searchable keywords, not the full sentence.
+- Interpret "150k" style shorthand as 150000.
+- ₦ means NGN, ₺ means TRY, $ means USD, € means EUR.
+- Never invent constraints the user did not state.
+
+USER QUERY: {query}

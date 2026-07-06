@@ -44,3 +44,35 @@ class HealthResponse(BaseModel):
     db: str
     vector_index: str
     indexed_products: int
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=5, max_length=500)
+    region: str | None = None
+    live_topup: bool = True          # run a live search before retrieval
+
+
+class CitationOut(BaseModel):
+    n: int
+    retailer: str
+    title: str
+    price: float
+    currency: str
+    url: str
+
+
+class AskResponse(BaseModel):
+    question: str
+    answer: str
+    grounded: bool
+    citations: list[CitationOut]
+    intent: dict
+    listings_considered: int
+    latency_ms: int
+
+
+class CostReport(BaseModel):
+    daily_budget_usd: float
+    spent_last_24h_usd: float
+    calls_last_24h: int
+    by_purpose: dict[str, int]

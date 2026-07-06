@@ -10,6 +10,10 @@ from app.core.search_service import execute_search
 from app.db import repository as repo
 from app.db.session import get_db
 from app.schemas.api import (
+    AskRequest,
+    AskResponse,
+    CitationOut,
+    CostReport,
     HealthResponse,
     RetailerInfo,
     SearchRequest,
@@ -67,4 +71,49 @@ def health(db: Session = Depends(get_db)) -> HealthResponse:
         db=db_status,
         vector_index="ok",
         indexed_products=store.count,
+    )
+
+
+@router.post("/ask", response_model=AskResponse)
+def ask_endpoint(req: AskRequest, db: Session = Depends(get_db)) -> AskResponse:
+    """RAG-grounded conversational answer with citations (FR-11)."""
+    import time as _time
+
+    from app.llm.rag import ask as rag_ask
+
+    started = _time.monotonic()
+    result = rag_ask(db, req.question, live_topup=req.live_topup)
+    return AskResponse(
+        question=req.question,
+        answer=result.answer,
+        grounded=result.grounded,
+        citations=[CitationOut(**c.model_dump()) for c in result.citations],
+        intent=result.intent.model_dump(),
+        listings_considered=result.listings_considered,
+        latency_ms=int((_time.monotonic() - started) * 1000),
+    )
+
+
+@router.get("/llm/costs", response_model=CostReport)
+def llm_costs(db: Session = Depends(get_db)) -> CostReport:
+    """LLM spend observability (design doc NFR-12)."""
+    import os
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import func as sa_func
+    from sqlalchemy import select
+
+    from app.db.models import LLMCall
+
+    since = datetime.now(UTC) - timedelta(days=1)
+    rows = db.execute(
+        select(LLMCall.purpose, sa_func.count(), sa_func.sum(LLMCall.cost_usd))
+        .where(LLMCall.created_at >= since)
+        .group_by(LLMCall.purpose)
+    ).all()
+    return CostReport(
+        daily_budget_usd=float(os.getenv("LLM_DAILY_BUDGET_USD", "2.00")),
+        spent_last_24h_usd=round(sum(float(r[2] or 0) for r in rows), 6),
+        calls_last_24h=sum(int(r[1]) for r in rows),
+        by_purpose={r[0]: int(r[1]) for r in rows},
     )

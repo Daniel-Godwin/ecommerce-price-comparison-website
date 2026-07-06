@@ -2,8 +2,8 @@
 
 A price comparison platform that aggregates product prices across multiple online retailers, with an intelligence layer (LLM APIs + Retrieval-Augmented Generation) arriving in Phase 3 to power natural-language product search and grounded, cited comparisons.
 
-> **Status: Phase 2 — Platform Foundation** ✅
-> Everything from Phase 1, plus: FastAPI REST API · SQLite/PostgreSQL persistence · price-snapshot history · FAISS semantic index · background refresh scheduler · Docker Compose
+> **Status: Phase 3 — Intelligence Layer** ✅
+> Everything from Phases 1–2, plus: LLM query understanding with a zero-cost fast path · `/ask` RAG endpoint with grounded, cited answers · citation verification against retrieved data · daily LLM budget guard with graceful fallback · cost observability endpoint
 
 ## Why
 
@@ -57,11 +57,19 @@ jobs/scheduler.py refreshes popular queries in the background.
 
 | Endpoint | Purpose |
 |---|---|
+| `POST /api/v1/ask` | Natural-language question → RAG answer grounded in retrieved listings, with citations |
 | `POST /api/v1/search` | Multi-retailer search: listings, analytics, persisted product ids, semantic neighbors |
 | `GET /api/v1/products/{id}` | Product detail with latest price per retailer |
 | `GET /api/v1/products/{id}/history?days=30` | Price snapshots over time |
 | `GET /api/v1/retailers` | Supported sources + degraded status |
 | `GET /api/v1/health` | DB + vector-index health |
+| `GET /api/v1/llm/costs` | LLM spend in the last 24 h vs. the daily budget |
+
+### Intelligence layer (Phase 3)
+
+- **Intent parsing** (`app/llm/intent.py`): plain keyword queries take a free heuristic fast path; conversational queries ("best phone under ₦150k?") go to a small LLM. Budget exhaustion or provider failure degrades to the fast path — never a hard failure.
+- **RAG `/ask`** (`app/llm/rag.py`): hybrid retrieval (FAISS + latest-price SQL + intent filters) → citation-numbered context → grounded generation → **citation verification** (every cited number must exist in the retrieved set; one regeneration, then honest plain-comparison fallback). Prices always come from the database — the LLM only narrates.
+- **Providers** (`app/llm/client.py`): set `ANTHROPIC_API_KEY` to use Claude (Haiku for intent, Sonnet for answers). Without a key, a deterministic **offline stub** answers from retrieved data — the platform runs fully without any paid API. Every call is logged to `llm_calls`; `LLM_DAILY_BUDGET_USD` (default $2) caps daily spend.
 
 **Embeddings** are pluggable: a dependency-free hashing embedder is the default (keeps torch out of CI); install `sentence-transformers` and restart to upgrade to true semantic embeddings — the index rebuilds itself automatically.
 
@@ -91,7 +99,7 @@ tests/                   # 25 unit/adapter/integration tests + fixtures
 |-------|-------------|--------|
 | **1** | Aggregation core: adapters, normalizer, analytics, cache, Streamlit UI, tests, CI | ✅ this release |
 | **2** | FastAPI REST API, DB persistence + price history, embeddings + FAISS semantic index, scheduler, Docker | ✅ this release |
-| **3** | LLM query understanding, `/ask` RAG endpoint with citations + groundedness checks, entity resolution, cost dashboard | 🔜 |
+| **3** | LLM query understanding, `/ask` RAG endpoint with citations + groundedness verification, budget guard, cost endpoint | ✅ this release |
 
 Full specification: see the *Software Design & Development Documentation* (v1.0) in the project docs.
 

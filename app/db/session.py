@@ -15,8 +15,26 @@ _DEFAULT_URL = "sqlite:///./pricecompare.db"
 
 def _make_engine():
     url = os.getenv("DATABASE_URL", _DEFAULT_URL)
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return create_engine(url, connect_args=connect_args, pool_pre_ping=True)
+    if url.startswith("sqlite"):
+        # timeout: wait for locks instead of failing; WAL: allow a reader
+        # and a writer concurrently (llm_calls logging happens on a second
+        # connection while a request session is open)
+        eng = create_engine(
+            url,
+            connect_args={"check_same_thread": False, "timeout": 30},
+            pool_pre_ping=True,
+        )
+        from sqlalchemy import event
+
+        @event.listens_for(eng, "connect")
+        def _set_sqlite_pragmas(dbapi_conn, _record):
+            cursor = dbapi_conn.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA busy_timeout=30000")
+            cursor.close()
+
+        return eng
+    return create_engine(url, pool_pre_ping=True)
 
 
 engine = _make_engine()
