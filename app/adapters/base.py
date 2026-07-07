@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import abc
 import logging
+import random
+import threading
 import time
 
 import requests
@@ -54,6 +56,9 @@ class BaseAdapter(abc.ABC):
         # circuit breaker state
         self._consecutive_failures = 0
         self._opened_at: float | None = None
+        # polite-mode throttle state (one clock per retailer)
+        self._throttle_lock = threading.Lock()
+        self._last_request_at: float = 0.0
 
     # ------------------------------------------------------------------ #
     # circuit breaker (NFR-04)                                            #
@@ -98,8 +103,22 @@ class BaseAdapter(abc.ABC):
     # ------------------------------------------------------------------ #
     # helpers for subclasses                                              #
     # ------------------------------------------------------------------ #
+    def _throttle(self) -> None:
+        """Polite mode: space live requests to this retailer with
+        human-like timing (min interval + random jitter). This is what
+        keeps residential IPs from being flagged by retailer bot
+        protection — it applies to every caller automatically."""
+        min_gap = self.settings.scrape_min_interval_seconds
+        jitter = random.uniform(0, self.settings.scrape_jitter_seconds)
+        with self._throttle_lock:
+            wait = self._last_request_at + min_gap + jitter - time.monotonic()
+            if wait > 0:
+                time.sleep(wait)
+            self._last_request_at = time.monotonic()
+
     def _get(self, url: str, **kwargs) -> requests.Response:
-        """HTTP GET with timeout + exponential-backoff retry."""
+        """HTTP GET with polite throttle, timeout + backoff retry."""
+        self._throttle()
 
         @retry(
             stop=stop_after_attempt(self.settings.max_retries),

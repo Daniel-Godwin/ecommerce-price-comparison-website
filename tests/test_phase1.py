@@ -174,3 +174,21 @@ def test_search_partial_results_when_one_source_fails(monkeypatch):
     assert ok["DemoStore (sample data)"] is True
     assert ok["AlwaysFails"] is False
     assert len(result.listings) == 5           # demo results still returned
+
+
+def test_adapter_throttle_spaces_requests(monkeypatch):
+    """Polite mode: consecutive live requests to one retailer are spaced by
+    at least the configured minimum interval (+ jitter)."""
+    import time
+
+    from app.adapters.demo import DemoStoreAdapter
+
+    adapter = DemoStoreAdapter()
+    monkeypatch.setattr(adapter.settings, "scrape_min_interval_seconds", 0.3)
+    monkeypatch.setattr(adapter.settings, "scrape_jitter_seconds", 0.0)
+
+    adapter._throttle()                       # first call: no wait
+    started = time.monotonic()
+    adapter._throttle()                       # second call: must wait ~0.3s
+    elapsed = time.monotonic() - started
+    assert elapsed >= 0.28, f"throttle did not space requests ({elapsed:.3f}s)"

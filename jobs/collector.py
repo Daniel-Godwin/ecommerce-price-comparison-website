@@ -10,19 +10,26 @@ Usage (PowerShell, from the project folder):
 
     $env:DATABASE_URL = "<External Database URL from the Render dashboard>"
     python -m jobs.collector                 # one pass over the query list
-    python -m jobs.collector --loop 3600     # repeat every hour
+    python -m jobs.collector --loop 86400    # repeat daily (recommended)
 
 Get the External Database URL: Render dashboard -> pricecompare-db ->
 Connect -> External Database URL. Never commit it; set it per-session or
 put it in .env as COLLECTOR_DATABASE_URL.
 
 Edit QUERIES below to control what the public site tracks.
+
+Politeness: every retailer request is spaced 10-15s apart by the adapter
+layer itself, and queries are separated by 20-40s here. A full pass takes
+~10 minutes and looks like a person browsing — this keeps your home IP
+from being flagged by retailer bot protection. Run at most once a day,
+ideally at night (see README for Windows Task Scheduler setup).
 """
 from __future__ import annotations
 
 import argparse
 import logging
 import os
+import random
 import time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
@@ -77,7 +84,7 @@ def run_once() -> None:
             except Exception as exc:  # noqa: BLE001 — keep collecting
                 logger.warning("%-28s -> failed: %s", q, exc)
                 fail += 1
-            time.sleep(3)          # polite pacing between queries
+            time.sleep(random.uniform(20, 40))   # human-like pacing
     logger.info("collection pass done: %d ok, %d failed", ok, fail)
 
 
