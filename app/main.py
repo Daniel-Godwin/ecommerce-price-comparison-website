@@ -27,6 +27,17 @@ logging.basicConfig(level=logging.INFO,
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
+    # Self-cleaning: in production (demo adapter disabled) remove any
+    # DemoStore data so the public site only ever shows real retailers.
+    try:
+        from app.adapters import _demo_enabled
+
+        if not _demo_enabled():
+            from scripts.purge_demo_data import purge
+
+            purge()
+    except Exception as exc:  # noqa: BLE001 — cleanup must never block startup
+        logging.getLogger(__name__).warning("demo purge skipped: %s", exc)
     _sync_vector_index()
     yield
 

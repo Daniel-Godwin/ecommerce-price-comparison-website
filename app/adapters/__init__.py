@@ -20,9 +20,18 @@ _REGISTRY: dict[str, BaseAdapter] = {cls.key: cls() for cls in _ADAPTER_CLASSES}
 
 
 def _demo_enabled() -> bool:
+    """Demo adapter policy:
+    - ENABLE_DEMO_ADAPTER set -> honor it explicitly
+    - otherwise: ON for local/dev (SQLite), OFF automatically in production
+      (any PostgreSQL DATABASE_URL) — no dashboard configuration required."""
     import os
 
-    return os.getenv("ENABLE_DEMO_ADAPTER", "true").lower() not in ("false", "0", "off")
+    explicit = os.getenv("ENABLE_DEMO_ADAPTER")
+    if explicit is not None:
+        return explicit.lower() not in ("false", "0", "off")
+    return not os.getenv("DATABASE_URL", "sqlite").startswith(
+        ("postgres://", "postgresql")
+    )
 
 
 def all_adapters() -> list[BaseAdapter]:

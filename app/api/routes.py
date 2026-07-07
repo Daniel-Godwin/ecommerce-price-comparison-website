@@ -125,16 +125,19 @@ def recent_products(limit: int = Query(default=12, ge=1, le=50),
     """Most recently tracked products with their latest price (ticker feed)."""
     from sqlalchemy import select
 
+    from app.adapters import _demo_enabled
     from app.db.models import Product
 
     rows = db.execute(
         select(Product).order_by(Product.id.desc()).limit(limit)
     ).scalars().all()
+    hide_demo = not _demo_enabled()
     out = []
     for product in rows:
         detail = repo.get_product_detail(db, product.id)
         listings = [x for x in (detail or {}).get("listings", [])
-                    if x.get("latest_price")]
+                    if x.get("latest_price")
+                    and not (hide_demo and x["retailer"].startswith("DemoStore"))]
         if not listings:
             continue
         cheapest = min(listings, key=lambda x: x["latest_price"])

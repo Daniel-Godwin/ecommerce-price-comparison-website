@@ -230,3 +230,20 @@ def test_accessory_filter_from_live_incident(client):
     assert _wants_accessory("samsung galaxy a15", []) is False
     assert _wants_accessory("samsung galaxy a15 case", []) is True
     assert _wants_accessory("samsung galaxy a15", ["transparent case"]) is True
+
+
+def test_demo_adapter_auto_disabled_on_postgres(client, monkeypatch):
+    """Production self-configuration: demo defaults OFF on PostgreSQL,
+    ON on SQLite, and an explicit ENABLE_DEMO_ADAPTER always wins."""
+    from app.adapters import _demo_enabled
+
+    monkeypatch.delenv("ENABLE_DEMO_ADAPTER", raising=False)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@host/db")
+    assert _demo_enabled() is False
+
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///./dev.db")
+    assert _demo_enabled() is True
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@host/db")
+    monkeypatch.setenv("ENABLE_DEMO_ADAPTER", "true")
+    assert _demo_enabled() is True

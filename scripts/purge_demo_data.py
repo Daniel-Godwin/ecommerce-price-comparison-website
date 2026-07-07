@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("purge_demo")
 
 
-def main() -> None:
+def purge() -> None:
     prod_url = os.getenv("COLLECTOR_DATABASE_URL")
     if prod_url:
         os.environ["DATABASE_URL"] = prod_url
@@ -58,6 +58,10 @@ def main() -> None:
         logger.info("purged: %d snapshots, %d listings, %d orphan products, "
                     "1 retailer", snaps, rows, len(orphans))
     logger.info("done — refresh the site; ticker and search are demo-free")
+
+
+def main() -> None:
+    purge()
 
 
 if __name__ == "__main__":
