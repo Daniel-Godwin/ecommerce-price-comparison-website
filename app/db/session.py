@@ -41,7 +41,9 @@ def _make_engine():
             cursor.close()
 
         return eng
-    return create_engine(url, pool_pre_ping=True)
+    # pool_pre_ping validates connections at checkout; pool_recycle
+    # replaces ones older than 30 min (survives laptop sleep, idle cuts)
+    return create_engine(url, pool_pre_ping=True, pool_recycle=1800)
 
 
 engine = _make_engine()

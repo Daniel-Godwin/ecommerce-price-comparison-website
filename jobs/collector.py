@@ -35,6 +35,11 @@ import time
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger("collector")
 
+# Konga is JavaScript-rendered behind strict bot protection — every request
+# 403s, wasting ~40s of retries per query. Off by default until a proper
+# API/adapter exists; re-add "konga" here to try again.
+RETAILERS = ["jumia"]
+
 QUERIES = [
     "samsung galaxy a15",
     "samsung galaxy a25",
@@ -70,21 +75,23 @@ def run_once() -> None:
 
     init_db()
     ok = fail = 0
-    with db_session() as db:
-        for q in QUERIES:
-            try:
+    for q in QUERIES:
+        try:
+            # one session per query: a dead connection (laptop sleep, network
+            # blip) fails only this query — the next one reconnects fresh
+            with db_session() as db:
                 result = execute_search(
                     db,
-                    SearchRequest(query=q, retailers=["jumia", "konga"],
+                    SearchRequest(query=q, retailers=RETAILERS,
                                   use_cache=False),
                 )
-                live = sum(s.listings_found for s in result.sources_status if s.ok)
-                logger.info("%-28s -> %3d live listings", q, live)
-                ok += 1
-            except Exception as exc:  # noqa: BLE001 — keep collecting
-                logger.warning("%-28s -> failed: %s", q, exc)
-                fail += 1
-            time.sleep(random.uniform(20, 40))   # human-like pacing
+            live = sum(s.listings_found for s in result.sources_status if s.ok)
+            logger.info("%-28s -> %3d live listings", q, live)
+            ok += 1
+        except Exception as exc:  # noqa: BLE001 — keep collecting
+            logger.warning("%-28s -> failed: %s", q, exc)
+            fail += 1
+        time.sleep(random.uniform(20, 40))   # human-like pacing
     logger.info("collection pass done: %d ok, %d failed", ok, fail)
 
 
