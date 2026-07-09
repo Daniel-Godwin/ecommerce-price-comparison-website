@@ -25,11 +25,20 @@ _ADAPTER_KEY_BY_NAME = {a.name: a.key for a in all_adapters()}
 
 def execute_search(db: Session, req: SearchRequest) -> SearchResponse:
     started = time.monotonic()
-    result = run_search(req.query, adapter_keys=req.retailers, use_cache=req.use_cache)
+    # Parse the raw box input: "best phone under 150000" -> terms="phone",
+    # max_price=150000. Keeps literal keyword searches working (fast path),
+    # and makes the website search box as smart as the Ask-AI box.
+    from app.llm.intent import parse_intent
+
+    parsed = parse_intent(req.query)
+    search_terms = parsed.product_terms or req.query
+    effective_max = req.max_price if req.max_price is not None else parsed.max_price
+
+    result = run_search(search_terms, adapter_keys=req.retailers, use_cache=req.use_cache)
 
     listings = result.listings
-    if req.max_price is not None:
-        listings = [x for x in listings if x.price <= req.max_price]
+    if effective_max is not None:
+        listings = [x for x in listings if x.price <= effective_max]
 
     # persist + index (skip when served purely from cache — already stored)
     product_ids: list[int] = []
@@ -45,7 +54,7 @@ def execute_search(db: Session, req: SearchRequest) -> SearchResponse:
     similar: list[SemanticHit] = []
     store = get_store()
     if store.count:
-        hits = store.search(req.query, k=8)
+        hits = store.search(search_terms, k=8)
         hit_ids = [pid for pid, _ in hits]
         titles = {
             p.id: p.canonical_title
@@ -66,7 +75,7 @@ def execute_search(db: Session, req: SearchRequest) -> SearchResponse:
 
     # recompute analytics if max_price filtering changed the pool
     analytics = result.analytics
-    if req.max_price is not None:
+    if effective_max is not None:
         from app.core.analytics import compute_analytics
 
         analytics = compute_analytics(listings)

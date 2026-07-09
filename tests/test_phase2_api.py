@@ -151,3 +151,19 @@ def test_product_not_found(client):
 def test_search_validation_rejects_short_query(client):
     resp = client.post("/api/v1/search", json={"query": "x"})
     assert resp.status_code == 422
+
+
+def test_search_box_parses_natural_language(client):
+    """Regression (pre-launch): the website search box must understand
+    'best phone under 150000' — extract terms + price cap — not search
+    the literal sentence (which returns nothing)."""
+    client.post("/api/v1/search",
+                json={"query": "hp laptop", "retailers": ["demostore"], "use_cache": False})
+    resp = client.post(
+        "/api/v1/search",
+        json={"query": "best hp laptop under 150000",
+              "retailers": ["demostore"], "use_cache": False},
+    )
+    body = resp.json()
+    assert body["listings"], "natural-language query should return listings"
+    assert all(x["price"] <= 150000 for x in body["listings"])

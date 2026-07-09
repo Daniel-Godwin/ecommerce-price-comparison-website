@@ -41,18 +41,29 @@ logger = logging.getLogger("collector")
 RETAILERS = ["jumia"]
 
 QUERIES = [
-    "samsung galaxy a15",
-    "samsung galaxy a25",
-    "infinix hot 40",
+    # smartphones (specific models return real devices, not accessories)
+    "samsung galaxy a15 smartphone",
+    "samsung galaxy a05s",
+    "infinix hot 40i",
+    "infinix smart 8",
     "tecno spark 20",
+    "tecno pop 8",
     "redmi note 13",
-    "hp laptop",
-    "dell laptop",
+    "itel s24",
+    "xiaomi redmi 13c",
+    "oppo a18",
+    # laptops
+    "hp laptop 15 inch",
+    "dell inspiron laptop",
+    "lenovo ideapad laptop",
+    # popular electronics
     "bluetooth speaker",
     "power bank 20000mah",
     "smart tv 43 inch",
+    "wireless earbuds",
     "rice cooker",
     "standing fan",
+    "microwave oven",
 ]
 
 
