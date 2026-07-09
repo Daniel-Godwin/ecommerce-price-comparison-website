@@ -247,3 +247,42 @@ def test_demo_adapter_auto_disabled_on_postgres(client, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@host/db")
     monkeypatch.setenv("ENABLE_DEMO_ADAPTER", "true")
     assert _demo_enabled() is True
+
+
+def test_hybrid_retrieval_finds_real_smartphones(client):
+    """Regression (pre-launch): the hashing embedder can rank a feature phone
+    above a real smartphone for 'android phone'. Keyword retrieval must
+    ensure genuine smartphones are found, not dropped below the vector
+    threshold."""
+    import app.llm.rag as rag
+    from app.db import repository as repo
+    from app.db.models import Product, Retailer
+    from app.db.session import db_session
+    from app.schemas.models import Listing
+    from app.vector.faiss_store import get_store
+
+    with db_session() as db:
+        if not db.query(Retailer).filter_by(adapter_key="jumia").first():
+            db.add(Retailer(name="Jumia", adapter_key="jumia", region="NG"))
+            db.flush()
+        samples = [
+            ("MKTEL B310 mobile phone Dual SIM 1200mAh Torch spare phone", 7293),
+            ("XIAOMI Redmi 8A 4GB+64GB 5000mAh Smartphone Dual SIM Black", 74592),
+            ("Huawei Y9 Smartphone Android 8GB RAM 256GB Dual Sim", 79200),
+        ]
+        ls = [Listing(product=t, retailer="Jumia", price=float(p),
+                      currency="NGN", url=f"https://jumia.com.ng/reg{i}")
+              for i, (t, p) in enumerate(samples)]
+        repo.persist_listings(db, ls, {"Jumia": "jumia"})
+        db.flush()
+        prods = db.query(Product).all()
+        store = get_store()
+        store.upsert([p.id for p in prods], [p.canonical_title for p in prods])
+
+    with db_session() as db:
+        ans = rag.ask(db, "best android phone under 150000", live_topup=False)
+
+    titles = " ".join(c.title.lower() for c in ans.citations)
+    assert "xiaomi" in titles or "huawei" in titles, \
+        "real smartphones must appear, not only feature phones"
+    assert all(c.price <= 150000 for c in ans.citations)

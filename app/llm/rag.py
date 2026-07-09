@@ -100,15 +100,33 @@ def _retrieve(db: Session, intent: Intent, live_topup: bool) -> list[Citation]:
         except Exception as exc:  # noqa: BLE001 — retrieval must not die here
             logger.warning("live top-up failed: %s", exc)
 
-    store = get_store()
-    hits = store.search(intent.product_terms, k=24) if store.count else []
-    hits = [(pid, score) for pid, score in hits if score >= MIN_SIMILARITY]
-
     tokens = _significant_tokens(intent.product_terms)
     allow_accessories = _wants_accessory(intent.product_terms, intent.attributes)
+
+    store = get_store()
+    hits = store.search(intent.product_terms, k=40) if store.count else []
+    hits = [(pid, score) for pid, score in hits if score >= MIN_SIMILARITY]
+    hit_ids = {pid for pid, _ in hits}
+
+    # Hybrid: also pull products whose TITLE contains the product-term tokens
+    # directly. The hashing embedder ranks by character overlap, not meaning,
+    # so a real "Xiaomi ... Smartphone" can score below threshold while a
+    # feature phone scores above it. Keyword matching guarantees genuine
+    # matches are considered; the price filter + sort still decide the result.
+    from sqlalchemy import or_
+    from sqlalchemy import select as _select
+
+    if tokens:
+        clauses = [Product.canonical_title.ilike(f"%{t}%") for t in tokens]
+        kw = db.execute(
+            _select(Product).where(or_(*clauses)).limit(60)
+        ).scalars().all()
+        for prod in kw:
+            hit_ids.add(prod.id)
+
     candidates: list[Citation] = []
     seen_urls: set[str] = set()
-    for product_id, _score in hits:
+    for product_id in hit_ids:
         product = db.get(Product, product_id)
         if product is None:
             continue
